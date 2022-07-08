@@ -4,7 +4,19 @@
 #ifndef _hal_H_
 #define _hal_H_
 
-//================================================
+//==========================================================
+//                    FOR START
+//==========================================================
+
+extern void move_forward(void);
+extern volatile int SM_Step;
+extern volatile int SM_Half_Step;
+extern volatile int StepperDelay;
+extern volatile int SM_Counter;
+
+extern volatile unsigned int first_byte_MSG; // UART RX
+
+//===============================================
 //                REAL
 //================================================
 extern void _buttonDebounceDelay(int button);
@@ -94,8 +106,8 @@ extern void DelayUs(unsigned int);
 ////================================================
 ////  Delay [ms]
 ////================================================
-void delay_ms(int ms);
-
+//void delay_ms(int ms);
+void delay_ms(unsigned int ms);
 __interrupt void Timer_A(void);
 
 #endif

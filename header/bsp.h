@@ -22,11 +22,18 @@ extern void InitGPIO(void);
 #define RxBuffer UCA0RXBUF
 #define TxBuffer UCA0TXBUF
 
+////***********************************************
+////            POT configuration
+////***********************************************
+//#define  POTPortSel     P1SEL
+//#define  POTPortDir     P1DIR
+
 //***********************************************
-//            POT configuration
+//         Stepper Motor configuration
 //***********************************************
-#define  POTPortSel     P1SEL
-#define  POTPortDir     P1DIR
+#define  SMPortSel     P1SEL
+#define  SMPortDir     P1DIR
+#define  SMPortOUT     P1OUT
 
 //***********************************************
 //            RGB configuration

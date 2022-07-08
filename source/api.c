@@ -2,8 +2,16 @@
 
 #include  "../header/api.h"             
 #include  "../header/hal.h"             
-#include  "../header/bsp.h"             
+#include  "../header/bsp.h"
+//==========================================================
+//                    FOR START
+//==========================================================
+volatile int SM_Counter= 0;
 
+
+
+
+//--------------------------------------------------
 volatile int Out_to_RGB = 0x01;
 //==========================================================
 //                     STATE 1
@@ -87,6 +95,9 @@ void clear_and_initialize(void){
 void Transmit_menu(void){
     enable_transmition();
 }
-
-
-
+//==========================================================
+//                     STATE 10
+//==========================================================
+void stepper_motor_calibration(void){
+    move_forward();
+}

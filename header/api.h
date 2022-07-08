@@ -2,6 +2,18 @@
 #define _api_H_
 
 //////
+
+//==========================================================
+//                    FOR START
+//==========================================================
+extern volatile int SM_Step;
+extern volatile int SM_Half_Step;
+extern volatile int StepperDelay;
+extern volatile unsigned int first_byte_MSG;  // UART RX
+//------------------------------------------------
+// state 10
+extern void stepper_motor_calibration(void);
+
 //==========================================================
 //                 GLOBAL VARIABLES
 //==========================================================

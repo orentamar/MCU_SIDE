@@ -5,6 +5,11 @@
 #include "../header/hal.h"
 #include "../header/bsp.h"
 
+// UART Flags:
+unsigned int status_flg;
+unsigned int state_flg;
+
+//------------------------------------------------------------------
 volatile char POT[5];
 unsigned int i,j;
 const char MENU[] = "\n"
@@ -22,6 +27,19 @@ const char MENU[] = "\n"
                     "*******************************************************\r";
 
 volatile char REAL_Str[16] = "I love my Negev ";
+//==========================================================
+//                    FOR START
+//==========================================================
+
+void move_forward(void){
+        SM_Step <<= 1;
+        if (SM_Step == 0x80){
+            SM_Step = 0x8;
+        }
+        SMPortOUT = SM_Step;
+        delay_ms(StepperDelay);
+        SM_Counter +=1;
+}
 
 //==========================================================
 //                     Real PB1 ISR
@@ -117,20 +135,31 @@ void enable_transmition(void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void)
 {
-    clear_RGB();
-    if(state != 4){
-        state = RxBuffer - 48;   // 0 in ASCII is 48
+    first_byte_MSG = RxBuffer;
+    if (first_byte_MSG == 35){ // '#'- Ask for status
+        status_flg = 1;
+        enable_transmition();
+    } else if (first_byte_MSG == 33){ // '!'- change state
+        state_flg = 1;
+    } else if (state_flg==1){
+        state = RxBuffer;
+        state_flg = 0;
+    }
 
-        __bic_SR_register_on_exit(LPM0_bits + GIE);  // Exit LPM0 on return to main
-    }
-    else{   // Get new delay
-      X[j++] = RxBuffer;
-      if (X[j-1] == '\0'){
-          j = 0;
-          x = str2int(X);
-          state = 9;
-      }
-    }
+//    clear_RGB();
+//    if(state != 4){
+//        state = RxBuffer - 48;   // 0 in ASCII is 48
+//
+//        __bic_SR_register_on_exit(LPM0_bits + GIE);  // Exit LPM0 on return to main
+//    }
+//    else{   // Get new delay
+//      X[j++] = RxBuffer;
+//      if (X[j-1] == '\0'){
+//          j = 0;
+//          x = str2int(X);
+//          state = 9;
+//      }
+//    }
 }
 
 //==========================================================
@@ -139,35 +168,42 @@ __interrupt void USCI0RX_ISR(void)
 #pragma vector=USCIAB0TX_VECTOR
 __interrupt void USCI0TX_ISR(void)
 {
-    if(state == 5){
-        TxBuffer = POT[i++];
-        if (i == sizeof POT -1){                         // check if done with transmition
-            i = 0;
-            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
-            IE2 |= UCA0RXIE;                             // Enable RX interrupt
-            state = 9;
-            }
+    if status_flg==1{
+        TxBuffer ="#";
+//        send_status();
+        status_flg = 0;
     }
-    else if(state == 8){
-        TxBuffer = MENU[i++];
-        if (i == sizeof MENU - 1){                       // check if done with transmition
-                i = 0;
-                IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
-                IE2 |= UCA0RXIE;                         // Enable RX interrupt
-        }
-    }
-    else if(state == 7){
-           TxBuffer = REAL_Str[i++];
-           if (i == sizeof REAL_Str - 1){                       // check if done with transmition
-               i = 0;
-               IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
-               IE2 |= UCA0RXIE;                         // Enable RX interrupt
-               state = 9;
-           }
-       }
-    else{
-      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
-    }
+        IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
+        IE2 |= UCA0RXIE;                         // Enable RX interrupt
+//    if(state == 5){
+//        TxBuffer = POT[i++];
+//        if (i == sizeof POT -1){                         // check if done with transmition
+//            i = 0;
+//            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
+//            IE2 |= UCA0RXIE;                             // Enable RX interrupt
+//            state = 9;
+//            }
+//    }
+//    else if(state == 8){
+//        TxBuffer = MENU[i++];
+//        if (i == sizeof MENU - 1){                       // check if done with transmition
+//                i = 0;
+//                IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
+//                IE2 |= UCA0RXIE;                         // Enable RX interrupt
+//        }
+//    }
+//    else if(state == 7){
+//           TxBuffer = REAL_Str[i++];
+//           if (i == sizeof REAL_Str - 1){                       // check if done with transmition
+//               i = 0;
+//               IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
+//               IE2 |= UCA0RXIE;                         // Enable RX interrupt
+//               state = 9;
+//           }
+//       }
+//    else{
+//      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
+//    }
 }
 
 /* - - - - - - - LCD interface - - - - - - - - -
@@ -345,13 +381,21 @@ int str2int( char volatile *str)
 ////===========================================================
 ////                     Delay [ms]
 ////===========================================================
-
-void delay_ms(int ms){
-  int tmp = ms;
-  TACCTL0 = CCIE;                             // CCR0 interrupt enabled
-  TACCR0 = ms*131;
-  TACTL = TASSEL_2 + ID_3 + MC_1 + TACLR;   // SMCLK/8 = 131072[Hz], upmode
-  __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0 w/ interrupt
+//
+//void delay_ms(int ms){
+//  int tmp = ms;
+//  TACCTL0 = CCIE;                             // CCR0 interrupt enabled
+//  TACCR0 = ms*131;
+//  TACTL = TASSEL_2 + ID_3 + MC_1 + TACLR;   // SMCLK/8 = 131072[Hz], upmode
+//  __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0 w/ interrupt
+//}
+void delay_ms(unsigned int ms)
+{
+    while (ms)
+    {
+        __delay_cycles(1000); //1000 for 1MHz and 16000 for 16MHz
+        ms--;
+    }
 }
 
 ////===========================================================

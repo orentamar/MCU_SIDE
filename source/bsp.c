@@ -11,15 +11,15 @@ void InitGPIO(void){
 	DCOCTL = 0;                               // Select lowest DCOx and MODx settings
 	BCSCTL1 = CALBC1_1MHZ;                    // Set DCO
 	DCOCTL = CALDCO_1MHZ;
-//***********************************************
-//            REAL- PB1 configuration
-//***********************************************
-
-	PB1_IntPending  &= ~BIT0;
-	PB1_IntEnable |= BIT0;
-	PB1_IntEdgeSel |= BIT0;
-	PB1_PortSel &= ~BIT0;
-	PB1_PortDir &= ~BIT0;
+////***********************************************
+////            REAL- PB1 configuration
+////***********************************************
+//
+//	PB1_IntPending  &= ~BIT0;
+//	PB1_IntEnable |= BIT0;
+//	PB1_IntEdgeSel |= BIT0;
+//	PB1_PortSel &= ~BIT0;
+//	PB1_PortDir &= ~BIT0;
 //***********************************************
 //            UART configuration
 //***********************************************
@@ -36,22 +36,29 @@ void InitGPIO(void){
 
     _BIS_SR(GIE);
 
-//***********************************************
-//            POT configuration
-//***********************************************
+////***********************************************
+////            POT configuration
+////***********************************************
+//
+//    //  ADC 10 configuration
+//        ADC10AE0 |= BIT3;       // P1.3 (A3) ADC option select
+//    // Port 1 - POT Port configuration---------------
+//        POTPortSel &= ~BIT3;    //POT-1.3 as GPIO
+//        POTPortDir |= BIT3;     //POT as GPIO-output
 
-    //  ADC 10 configuration
-        ADC10AE0 |= BIT3;       // P1.3 (A3) ADC option select
-    // Port 1 - POT Port configuration---------------
-        POTPortSel &= ~BIT3;    //POT-1.3 as GPIO
-        POTPortDir |= BIT3;     //POT as GPIO-output
+//***********************************************
+//         Stepper Motor configuration
+//***********************************************
+/// CHANGE BITS AFTER DELETE LCD
+	SMPortSel &= ~(BIT3 + BIT4 + BIT5 + BIT6);     //Stepper Motor:Phases:A-1.3,B-1.4,C-1.5, D-1.6 as GPIO
+	SMPortDir |= (BIT3 + BIT4 + BIT5 + BIT6);      //Stepper Motor: as GPIO-output
 
 //***********************************************
 //            RGB configuration
 //***********************************************
-        RGBPortSel &= ~(BIT0 + BIT1 + BIT2);     //RGB: B-2.0,G-2.1,R-2.2 as GPIO
-        RGBPortDir |= (BIT0 + BIT1 + BIT2);      //RGB: as GPIO-output
-        RGB_CLR;                                 //clear RGB
+    RGBPortSel &= ~(BIT0 + BIT1 + BIT2);     //RGB: B-2.0,G-2.1,R-2.2 as GPIO
+    RGBPortDir |= (BIT0 + BIT1 + BIT2);      //RGB: as GPIO-output
+    RGB_CLR;                                 //clear RGB
 
 //***********************************************
 //            LCD control configuration
