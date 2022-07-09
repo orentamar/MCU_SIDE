@@ -16,6 +16,8 @@ extern volatile int SM_Counter;
 
 extern volatile unsigned int first_byte_MSG; // UART RX
 
+void CollectDataForStatusMsg(void);
+
 //===============================================
 //                REAL
 //================================================

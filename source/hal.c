@@ -6,9 +6,11 @@
 #include "../header/bsp.h"
 
 // UART Flags:
+
+//unsigned int Msg_Size = 2;
+volatile char StatusArray[2];
 unsigned int status_flg;
 unsigned int state_flg;
-
 //------------------------------------------------------------------
 volatile char POT[5];
 unsigned int i,j;
@@ -138,6 +140,8 @@ __interrupt void USCI0RX_ISR(void)
     first_byte_MSG = RxBuffer;
     if (first_byte_MSG == 35){ // '#'- Ask for status
         status_flg = 1;
+//        Msg_Size = 3;
+        CollectDataForStatusMsg();
         enable_transmition();
     } else if (first_byte_MSG == 33){ // '!'- change state
         state_flg = 1;
@@ -162,19 +166,28 @@ __interrupt void USCI0RX_ISR(void)
 //    }
 }
 
+void CollectDataForStatusMsg(void){ // Gather information to send to PC- Status
+    StatusArray[0] = "#";
+    StatusArray[1] = SM_Counter;
+}
 //==========================================================
 //        UART-  Transmitter Interrupt Service Routine
 //==========================================================
 #pragma vector=USCIAB0TX_VECTOR
 __interrupt void USCI0TX_ISR(void)
 {
-    if status_flg==1{
-        TxBuffer ="#";
-//        send_status();
-        status_flg = 0;
+    if (status_flg==1){
+        TxBuffer = StatusArray[i++];
+        if (i == sizeof StatusArray -1){                         // check if done with transmition
+            i = 0;
+            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
+            IE2 |= UCA0RXIE;                             // Enable RX interrupt
+            status_flg = 0;
+        }
+    }else{
+      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
     }
-        IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
-        IE2 |= UCA0RXIE;                         // Enable RX interrupt
+
 //    if(state == 5){
 //        TxBuffer = POT[i++];
 //        if (i == sizeof POT -1){                         // check if done with transmition

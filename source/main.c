@@ -15,7 +15,6 @@ volatile unsigned int x = 500;
 volatile int sum_up_value = 0;
 volatile int sum_down_value = 65535;
 ////ONLY FOR STARS
-
 volatile int SM_Step = 0x8; //00010001
 volatile int SM_Half_Step = 0x33;
 volatile int StepperDelay = 20;  // f = MHz
