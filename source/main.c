@@ -35,7 +35,7 @@ void main(void){
         switch(state){
             case 0:
                 UCA0CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
-                IE2 &= ~UCA0TXIE;
+                IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
                 IE2 |= UCA0RXIE;                         // Enable RX interrupt
                 __bis_SR_register(LPM0_bits + GIE);   // Enter LPM0
                 break;

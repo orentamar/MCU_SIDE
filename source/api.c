@@ -16,6 +16,7 @@
 void stepper_motor_calibration(void){
         SM_Counter = 0;
         while (state_stage==1){ // motor is moving until state_stage changes
+            _BIS_SR(GIE);
             move_forward();
         }
         if (state_stage==2){ // end of calibration

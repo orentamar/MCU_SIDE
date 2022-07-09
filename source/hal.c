@@ -123,12 +123,13 @@ __interrupt void USCI0RX_ISR(void)
         Msg_location = 1;  // for state value
     } else if (state_flg==1){
         if (Msg_location==1){ // Get status value
-            state = RxBuffer - 48;
+            state = RxBuffer;
             Msg_location ++;
         }else if (Msg_location==2){ // Get status_stage value
-            state_stage =  RxBuffer - 48;
+            state_stage =  RxBuffer;
             Msg_location = 0;
             state_flg = 0; // Done getting all state information
+            __bic_SR_register_on_exit(LPM0_bits + GIE);  // Exit LPM0 on return to main
         }
 
     }
