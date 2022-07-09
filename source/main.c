@@ -7,17 +7,23 @@
 
 //  GLOBAL VARIABLES
 
-volatile unsigned int state = 10;  // Display menu at beginning
-volatile unsigned int first_byte_MSG;  // UART RX
+volatile unsigned int state = 10;  //Sleeping mode, enable interrupts
+
+//volatile int SM_Step = 0x8;       //0-0001-000
+//volatile int SM_Half_Step = 0x18; //0-0011-000
+//volatile int StepperDelay = 20;   // f = MHz
+//
+//volatile unsigned int Phi;
+//volatile int steps = 7;
+//volatile char Phi_str[4];
+
+////////////////////////////////////////////////
 volatile char X[10];
 volatile unsigned int x = 500;
 
 volatile int sum_up_value = 0;
 volatile int sum_down_value = 65535;
-////ONLY FOR STARS
-volatile int SM_Step = 0x8; //00010001
-volatile int SM_Half_Step = 0x33;
-volatile int StepperDelay = 20;  // f = MHz
+
 
 void main(void){
 	
@@ -27,9 +33,22 @@ void main(void){
     while(1){
         // FSM:  
         switch(state){
-            case 1:
-                RGBBlink(x);
+            case 0:
+                __bis_SR_register(LPM0_bits + GIE);   // Enter LPM0
                 break;
+            case 1:
+                stepper_motor_calibration();
+                break;
+
+
+
+
+                ////////////////////////////////////////////////
+
+
+//            case 1:
+//                RGBBlink(x);
+//                break;
             case 2:
                 UpCounter(x);
                 break;
@@ -56,10 +75,16 @@ void main(void){
                 __bis_SR_register(LPM0_bits + GIE);   // Enter LPM0
                 break;
             case 10:
-                stepper_motor_calibration();
+                SM_Counter = 0;
+                while (state ==10){
+                    _BIS_SR(GIE);
+                    move_forward();
+                    SM_Counter +=1;
+                }
+
                 break;
             default:
-                state = 9;
+                state = 0;
                 break;
         }
     }

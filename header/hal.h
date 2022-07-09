@@ -4,20 +4,49 @@
 #ifndef _hal_H_
 #define _hal_H_
 
-//==========================================================
-//                    FOR START
-//==========================================================
+//================================================
+//               Variables
+//================================================
+extern volatile unsigned int state;
+//extern volatile unsigned int x;
+//extern volatile char X[10];
+extern volatile int Out_to_RGB; // state 1
 
-extern void move_forward(void);
+// Stepper Motor
 extern volatile int SM_Step;
 extern volatile int SM_Half_Step;
 extern volatile int StepperDelay;
-extern volatile int SM_Counter;
+//================================================
+//        SERVICE FUNCTIONS
+//================================================
+//------------------------------------------------
+//                 UART
+//------------------------------------------------
+extern void GatherStatusInfo(void);
+extern void enable_transmition(void);
+//------------------------------------------------
+//               Stepper Motor
+//------------------------------------------------
+extern void move_forward(void);
+extern void move_forward_half(void);
 
-extern volatile unsigned int first_byte_MSG; // UART RX
+//------------------------------------------------
+//               State 1
+//------------------------------------------------
+extern void Phi_calculation(void);
 
-void CollectDataForStatusMsg(void);
 
+
+//================================================
+//                UART
+//================================================
+__interrupt void USCI0RX_ISR(void);
+__interrupt void USCI0TX_ISR(void);
+
+
+
+
+////////// OLD ///////////
 //===============================================
 //                REAL
 //================================================
@@ -25,18 +54,6 @@ extern void _buttonDebounceDelay(int button);
 __interrupt void PORT1_ISR(void);
 
 
-//================================================
-//               Variables
-//================================================
-extern volatile unsigned int state;
-extern volatile unsigned int x;
-extern volatile char X[10];
-extern volatile int Out_to_RGB; // state 1
-//================================================
-//                UART
-//================================================
-__interrupt void USCI0RX_ISR(void);
-__interrupt void USCI0TX_ISR(void);
 //================================================
 //        SERVICE FUNCTIONS
 //================================================
@@ -56,8 +73,8 @@ __interrupt void ADC10_ISR(void);
 // State 6
 extern void clearing(void);
 //------------------------------------------------
-// State 7
-extern void enable_transmition(void);
+//// State 7
+//extern void enable_transmition(void);
 //================================================
 // CONFIG: LCD BASIC FUNCTIONS
 //================================================

@@ -3,13 +3,29 @@
 #include  "../header/api.h"             
 #include  "../header/hal.h"             
 #include  "../header/bsp.h"
+//**********************************************************
+//                   Final Project
 //==========================================================
-//                    FOR START
+//                    Variables
 //==========================================================
-volatile int SM_Counter= 0;
 
 
+//==========================================================
+//                     STATE 1
+//==========================================================
+void stepper_motor_calibration(void){
+        SM_Counter = 0;
+        while (state_stage==1){ // motor is moving until state_stage changes
+            move_forward();
+        }
+        if (state_stage==2){ // end of calibration
+            Phi_calculation();
+            state_stage = 0;
+            state = 0; // sleeping mode
+        }
+}
 
+//**********************************************************
 
 //--------------------------------------------------
 volatile int Out_to_RGB = 0x01;
@@ -95,9 +111,7 @@ void clear_and_initialize(void){
 void Transmit_menu(void){
     enable_transmition();
 }
-//==========================================================
-//                     STATE 10
-//==========================================================
-void stepper_motor_calibration(void){
-    move_forward();
-}
+
+//***********************************************************
+//***********************************************************
+

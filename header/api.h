@@ -1,23 +1,40 @@
 #ifndef _api_H_
 #define _api_H_
 
-//////
-
+//**********************************************************
+//                   Final Project
 //==========================================================
-//                    FOR START
+//                  GLOBAL VARIABLES
 //==========================================================
+// general
+extern volatile unsigned int state;
+// UART
+extern volatile unsigned int first_byte_MSG;  // UART RX
+extern unsigned int state_stage;
+//------------------------------------------------
+// stepper motor
 extern volatile int SM_Step;
 extern volatile int SM_Half_Step;
 extern volatile int StepperDelay;
-extern volatile unsigned int first_byte_MSG;  // UART RX
 //------------------------------------------------
-// state 10
+// state 1
+extern volatile int SM_Counter;
+//================================================
+//        SERVICE FUNCTIONS
+//================================================
+// state 1
 extern void stepper_motor_calibration(void);
 
+
+
+
+
+
+////////////// OLD //////////////
 //==========================================================
 //                 GLOBAL VARIABLES
 //==========================================================
-extern volatile unsigned int state;
+
 extern volatile int sum_up_value;                           // state 2
 extern volatile int sum_down_value;                         // state 3
 extern volatile char POT[5];

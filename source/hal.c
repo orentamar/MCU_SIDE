@@ -4,16 +4,47 @@
 
 #include "../header/hal.h"
 #include "../header/bsp.h"
-
-// UART Flags:
-
-//unsigned int Msg_Size = 2;
-volatile char StatusArray[2];
-unsigned int status_flg;
-unsigned int state_flg;
-//------------------------------------------------------------------
-volatile char POT[5];
+//================================================
+//               Variables
+//================================================
+//------------------------------------------------
+//                  General
+//------------------------------------------------
 unsigned int i,j;
+//------------------------------------------------
+//                    UART
+//------------------------------------------------
+volatile unsigned int first_byte_MSG;  // UART RX
+
+//              --- Status ---
+const unsigned int Status_Msg_Size = 4;
+volatile char StatusArray[4]; // as Msg_Size
+unsigned int status_flg;
+
+//               --- State ---
+const unsigned int State_Msg_Size = 4; // 2- State, 2- State_Stage, without '#'
+unsigned int state_flg;
+unsigned int Msg_location = 0;
+unsigned int state_stage = 0;
+
+//------------------------------------------------
+//               Stepper Motor
+//------------------------------------------------
+volatile int SM_Step = 0x8;       //0-0001-000
+volatile int SM_Half_Step = 0x18; //0-0011-000
+volatile int StepperDelay = 20;   // f = MHz
+//------------------------------------------------
+//                  State 1
+//------------------------------------------------
+volatile int SM_Counter= 0;
+volatile unsigned int Phi;
+volatile char Phi_str[4];
+
+
+//------------------------------------------------------------------
+
+volatile char POT[5];
+
 const char MENU[] = "\n"
                     "                       Menu\n"
                     "*******************************************************\n"
@@ -30,7 +61,7 @@ const char MENU[] = "\n"
 
 volatile char REAL_Str[16] = "I love my Negev ";
 //==========================================================
-//                    FOR START
+//                    Stepper Motor
 //==========================================================
 
 void move_forward(void){
@@ -40,9 +71,153 @@ void move_forward(void){
         }
         SMPortOUT = SM_Step;
         delay_ms(StepperDelay);
-        SM_Counter +=1;
+}
+void move_forward_half(void){
+        SM_Step <<= 1;
+        if (SM_Step == 0xC0){
+            SM_Step = 0x18;
+        }
+        SMPortOUT = SM_Step;
+        delay_ms(StepperDelay);
+}
+//==========================================================
+//                     STATE 1
+//==========================================================
+void Phi_calculation(void){
+    Phi = 360*100;
+    Phi = Phi/SM_Counter;
+    int2str(Phi_str,Phi);
+}
+//==========================================================
+//                      UART
+//==========================================================
+
+void GatherStatusInfo(void){
+    int idx;
+    for (idx=0;idx<4;idx++){
+        StatusArray[idx]=Phi_str[idx];
+    }
+//StatusArray[4]=;
+
 }
 
+void enable_transmition(void){
+    UCA0CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
+    IE2 |= UCA0TXIE;                          // Enable TX interrupt
+}
+
+//==========================================================
+//        UART-  Receiver Interrupt Service Routine
+//==========================================================
+#pragma vector=USCIAB0RX_VECTOR
+__interrupt void USCI0RX_ISR(void)
+{
+    first_byte_MSG = RxBuffer;
+    if (first_byte_MSG == '#'){ // '#'- Ask for status (#- in hex-35)
+        status_flg = 1;
+        GatherStatusInfo();
+        enable_transmition();
+    } else if (first_byte_MSG == '!'){ // '!'- Starting state Msg (!- in hex-33)
+        state_flg = 1;
+        Msg_location = 1;  // for state value
+    } else if (state_flg==1){
+        if (Msg_location==1){ // Get status value
+            state = RxBuffer - 48;
+            Msg_location ++;
+        }else if (Msg_location==2){ // Get status_stage value
+            state_stage =  RxBuffer - 48;
+            Msg_location = 0;
+            state_flg = 0; // Done getting all state information
+        }
+
+    }
+
+//    clear_RGB();
+//    if(state != 4){
+//        state = RxBuffer - 48;   // 0 in ASCII is 48
+//
+//        __bic_SR_register_on_exit(LPM0_bits + GIE);  // Exit LPM0 on return to main
+//    }
+//    else{   // Get new delay
+//      X[j++] = RxBuffer;
+//      if (X[j-1] == '\0'){
+//          j = 0;
+//          x = str2int(X);
+//          state = 9;
+//      }
+//    }
+}
+
+
+//==========================================================
+//        UART-  Transmitter Interrupt Service Routine
+//==========================================================
+#pragma vector=USCIAB0TX_VECTOR
+__interrupt void USCI0TX_ISR(void)
+{
+    if (status_flg==1){
+        TxBuffer = StatusArray[i++];
+        if (i == sizeof StatusArray -1){                         // check if done with transmition
+            i = 0;
+            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
+            IE2 |= UCA0RXIE;                             // Enable RX interrupt
+            status_flg = 0;
+        }
+    }else{
+      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
+    }
+
+//    if(state == 5){
+//        TxBuffer = POT[i++];
+//        if (i == sizeof POT -1){                         // check if done with transmition
+//            i = 0;
+//            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
+//            IE2 |= UCA0RXIE;                             // Enable RX interrupt
+//            state = 9;
+//            }
+//    }
+//    else if(state == 8){
+//        TxBuffer = MENU[i++];
+//        if (i == sizeof MENU - 1){                       // check if done with transmition
+//                i = 0;
+//                IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
+//                IE2 |= UCA0RXIE;                         // Enable RX interrupt
+//        }
+//    }
+//    else if(state == 7){
+//           TxBuffer = REAL_Str[i++];
+//           if (i == sizeof REAL_Str - 1){                       // check if done with transmition
+//               i = 0;
+//               IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
+//               IE2 |= UCA0RXIE;                         // Enable RX interrupt
+//               state = 9;
+//           }
+//       }
+//    else{
+//      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
+//    }
+}
+
+
+//------------------------------------------------------------------
+//**************** Interrupt Service Routines (ISR) ****************
+//------------------------------------------------------------------
+//--------------- Port1 Interrupt Service Routine -------------------
+//------------------------------------------------------------------
+#pragma vector=PORT1_VECTOR
+__interrupt void PORT1_ISR(void){
+    if(PB1_IntPending & 0x01){
+        _buttonDebounceDelay(0x01);
+//        menu_tx = 1;
+        if (state == 7){
+            UCA0CTL1 &= ~UCSWRST;                     // **Initialize USCI state machine**
+            IE2 |= UCA0TXIE;                          // Enable USCI_A0 TX interrupt
+        }else {
+            state = 0;
+        }
+    }
+}
+/////////////////////////// OLD ////////////////////////////
 //==========================================================
 //                     Real PB1 ISR
 //==========================================================
@@ -56,22 +231,6 @@ void _buttonDebounceDelay(int button){
     PB1_IntPending &= ~button;              // manual clear of p1.button
 }
 
-//------------------------------------------------------------------
-//**************** Interrupt Service Routines (ISR) ****************
-//------------------------------------------------------------------
-//--------------- Port1 Interrupt Service Rotine -------------------
-//------------------------------------------------------------------
-#pragma vector=PORT1_VECTOR
-__interrupt void PORT1_ISR(void){
-    if(PB1_IntPending & 0x01){
-        _buttonDebounceDelay(0x01);
-//        menu_tx = 1;
-        if (state == 7){
-            UCA0CTL1 &= ~UCSWRST;                     // **Initialize USCI state machine**
-            IE2 |= UCA0TXIE;                          // Enable USCI_A0 TX interrupt
-        }
-    }
-}
 //==========================================================
 //                     STATE 1
 //==========================================================
@@ -127,97 +286,10 @@ void clearing(void){
 //==========================================================
 //                     STATE 8
 //==========================================================
-void enable_transmition(void){
-    UCA0CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
-    IE2 |= UCA0TXIE;                          // Enable TX interrupt
-}
-//==========================================================
-//        UART-  Receiver Interrupt Service Routine
-//==========================================================
-#pragma vector=USCIAB0RX_VECTOR
-__interrupt void USCI0RX_ISR(void)
-{
-    first_byte_MSG = RxBuffer;
-    if (first_byte_MSG == 35){ // '#'- Ask for status
-        status_flg = 1;
-//        Msg_Size = 3;
-        CollectDataForStatusMsg();
-        enable_transmition();
-    } else if (first_byte_MSG == 33){ // '!'- change state
-        state_flg = 1;
-    } else if (state_flg==1){
-        state = RxBuffer;
-        state_flg = 0;
-    }
-
-//    clear_RGB();
-//    if(state != 4){
-//        state = RxBuffer - 48;   // 0 in ASCII is 48
-//
-//        __bic_SR_register_on_exit(LPM0_bits + GIE);  // Exit LPM0 on return to main
-//    }
-//    else{   // Get new delay
-//      X[j++] = RxBuffer;
-//      if (X[j-1] == '\0'){
-//          j = 0;
-//          x = str2int(X);
-//          state = 9;
-//      }
-//    }
-}
-
-void CollectDataForStatusMsg(void){ // Gather information to send to PC- Status
-    StatusArray[0] = "#";
-    StatusArray[1] = SM_Counter;
-}
-//==========================================================
-//        UART-  Transmitter Interrupt Service Routine
-//==========================================================
-#pragma vector=USCIAB0TX_VECTOR
-__interrupt void USCI0TX_ISR(void)
-{
-    if (status_flg==1){
-        TxBuffer = StatusArray[i++];
-        if (i == sizeof StatusArray -1){                         // check if done with transmition
-            i = 0;
-            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
-            IE2 |= UCA0RXIE;                             // Enable RX interrupt
-            status_flg = 0;
-        }
-    }else{
-      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
-    }
-
-//    if(state == 5){
-//        TxBuffer = POT[i++];
-//        if (i == sizeof POT -1){                         // check if done with transmition
-//            i = 0;
-//            IE2 &= ~UCA0TXIE;                            // Disable TX interrupt
-//            IE2 |= UCA0RXIE;                             // Enable RX interrupt
-//            state = 9;
-//            }
-//    }
-//    else if(state == 8){
-//        TxBuffer = MENU[i++];
-//        if (i == sizeof MENU - 1){                       // check if done with transmition
-//                i = 0;
-//                IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
-//                IE2 |= UCA0RXIE;                         // Enable RX interrupt
-//        }
-//    }
-//    else if(state == 7){
-//           TxBuffer = REAL_Str[i++];
-//           if (i == sizeof REAL_Str - 1){                       // check if done with transmition
-//               i = 0;
-//               IE2 &= ~UCA0TXIE;                        // Disable TX interrupt
-//               IE2 |= UCA0RXIE;                         // Enable RX interrupt
-//               state = 9;
-//           }
-//       }
-//    else{
-//      IE2 &= ~UCA0TXIE;                                  // Disable TX interrupt
-//    }
-}
+//void enable_transmition(void){
+//    UCA0CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
+//    IE2 |= UCA0TXIE;                          // Enable TX interrupt
+//}
 
 /* - - - - - - - LCD interface - - - - - - - - -
 *   This code will interface to a standard LCD controller

@@ -14,12 +14,12 @@ void InitGPIO(void){
 ////***********************************************
 ////            REAL- PB1 configuration
 ////***********************************************
-//
-//	PB1_IntPending  &= ~BIT0;
-//	PB1_IntEnable |= BIT0;
-//	PB1_IntEdgeSel |= BIT0;
-//	PB1_PortSel &= ~BIT0;
-//	PB1_PortDir &= ~BIT0;
+
+	PB1_IntPending  &= ~BIT0;
+	PB1_IntEnable |= BIT0;
+	PB1_IntEdgeSel |= BIT0;
+	PB1_PortSel &= ~BIT0;
+	PB1_PortDir &= ~BIT0;
 //***********************************************
 //            UART configuration
 //***********************************************
