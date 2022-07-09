@@ -7,7 +7,7 @@
 
 //  GLOBAL VARIABLES
 
-volatile unsigned int state = 10;  //Sleeping mode, enable interrupts
+volatile unsigned int state = 0;  //Sleeping mode, enable interrupts
 
 //volatile int SM_Step = 0x8;       //0-0001-000
 //volatile int SM_Half_Step = 0x18; //0-0011-000
@@ -34,6 +34,9 @@ void main(void){
         // FSM:  
         switch(state){
             case 0:
+                UCA0CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
+                IE2 &= ~UCA0TXIE;
+                IE2 |= UCA0RXIE;                         // Enable RX interrupt
                 __bis_SR_register(LPM0_bits + GIE);   // Enter LPM0
                 break;
             case 1:
